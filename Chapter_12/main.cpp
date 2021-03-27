@@ -132,38 +132,47 @@ int main(int argc, char** argv)
     net.setPreferableTarget(DNN_TARGET_CPU);
     
     Mat input, blob;
-    
-    input= imread(argv[1]);
-
-    // Stop the program if reached end of video
-    if (input.empty()) {
-        cout << "No input image" << endl;
-        return 0;
+    VideoCapture cap = VideoCapture(0);
+    if(!cap.isOpened())
+    {
+        cout << "Couldn't find camera: " << 0 << endl;
+        return -1;
     }
-    // Create a 4D blob from a frame.
-    blobFromImage(input, blob, 1/255.0, Size(inpWidth, inpHeight), Scalar(0,0,0), true, false);
-    
-    //Sets the input to the network
-    net.setInput(blob);
-    
-    // Runs the forward pass to get output of the output layers
-    vector<Mat> outs;
-    net.forward(outs, getOutputsNames(net));
-    
-    // Remove the bounding boxes with low confidence
-    postprocess(input, outs);
-    
-    // Put efficiency information. The function getPerfProfile returns the overall time for inference(t) and the timings for each of the layers(in layersTimes)
-    vector<double> layersTimes;
-    double freq = getTickFrequency() / 1000;
-    double t = net.getPerfProfile(layersTimes) / freq;
-    string label = format("Inference time for compute the image : %.2f ms", t);
-    cout << label << endl;
-    
-    imshow("Deep Learning. Chapter 12", input);
-    imwrite("result.jpg", input);    
-    waitKey(0);
-    
+    for(;;){
+        cap >> input;
+
+        // Stop the program if reached end of video
+        if (input.empty()) {
+            cout << "No input image" << endl;
+            return 0;
+        }
+        if (input.channels() == 4)
+            cvtColor(input, input, COLOR_BGRA2BGR);
+
+        // Create a 4D blob from a frame.
+        blobFromImage(input, blob, 1/255.0, Size(inpWidth, inpHeight), Scalar(0,0,0), true, false);
+        
+        //Sets the input to the network
+        net.setInput(blob);
+        
+        // Runs the forward pass to get output of the output layers
+        vector<Mat> outs;
+        net.forward(outs, getOutputsNames(net));
+        
+        // Remove the bounding boxes with low confidence
+        postprocess(input, outs);
+        
+        // Put efficiency information. The function getPerfProfile returns the overall time for inference(t) and the timings for each of the layers(in layersTimes)
+        vector<double> layersTimes;
+        double freq = getTickFrequency() / 1000;
+        double t = net.getPerfProfile(layersTimes) / freq;
+        string label = format("Inference time for compute the image : %.2f ms", t);
+        cout << label << endl;
+        
+        imshow("Deep Learning. Chapter 12", input);
+        //imwrite("result.jpg", input);    
+        waitKey(1);
+    }
     return 0;
 }
 
